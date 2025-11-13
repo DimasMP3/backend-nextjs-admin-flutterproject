@@ -18,17 +18,27 @@ const MoviesResponse = z.object({ data: z.array(Movie) });
 const MovieResponse = z.object({ data: Movie });
 
 export async function fetchMovies() {
+
   const json = await api<unknown>("/api/movies");
+
   const parsed = MoviesResponse.safeParse(json);
+
   if (!parsed.success) throw new Error(parsed.error.message);
+
   return parsed.data.data;
+
 }
 
 export async function fetchMovie(id: number) {
+
   const json = await api<unknown>(`/api/movies/${id}`);
+
   const parsed = MovieResponse.safeParse(json);
+
   if (!parsed.success) throw new Error(parsed.error.message);
+
   return parsed.data.data;
+
 }
 
 export async function createMovie(payload: {
@@ -39,28 +49,41 @@ export async function createMovie(payload: {
   status?: "now_showing" | "coming_soon" | "archived";
   posterAssetId?: number;
 }) {
+
   const json = await api<unknown>("/api/movies", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+
   const parsed = MovieResponse.safeParse(json);
+
   if (!parsed.success) throw new Error(parsed.error.message);
+
   return parsed.data.data;
+
 }
 
 export async function updateMovie(id: number, payload: Partial<Omit<Movie, "id" | "createdAt">>) {
+
   const json = await api<unknown>(`/api/movies/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+
   const parsed = MovieResponse.safeParse(json);
+
   if (!parsed.success) throw new Error(parsed.error.message);
+
   return parsed.data.data;
+
 }
 
 export async function deleteMovie(id: number) {
+
   await api(`/api/movies/${id}`, { method: "DELETE" });
+
   return true;
+
 }
 
 export const moviesKeys = {

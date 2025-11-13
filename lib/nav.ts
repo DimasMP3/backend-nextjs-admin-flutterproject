@@ -1,9 +1,11 @@
 import type { ComponentType, SVGProps } from "react";
 
 export type NavItem = {
+
   label: string;
   href: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
+
 };
 
 export const navItems: NavItem[] = [
