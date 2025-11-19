@@ -40,7 +40,6 @@ export async function POST(req: Request) {
   
     if (!payload) return error("Invalid idToken payload", 400);
 
-
   
     const sub = payload.sub;
   
