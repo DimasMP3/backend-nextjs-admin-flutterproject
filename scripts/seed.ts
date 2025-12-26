@@ -47,7 +47,7 @@ async function main() {
 
   // Movies
   const movies = [
-    { title: 'Dune: Part Two', genre: 'Sci‑Fi', duration_min: 166, rating: 'PG-13', status: 'now_showing' },
+    { title: 'Dune: Part Two', genre: 'Sci-Fi', duration_min: 166, rating: 'PG-13', status: 'now_showing' },
     { title: 'Inside Out 2', genre: 'Animation', duration_min: 96, rating: 'PG', status: 'now_showing' },
     { title: 'Gladiator II', genre: 'Action', duration_min: 148, rating: 'R', status: 'coming_soon' },
     { title: 'Oppenheimer', genre: 'Drama', duration_min: 180, rating: 'R', status: 'now_showing' },
@@ -83,14 +83,41 @@ async function main() {
     theaterIds.push(rows[0].id);
   }
 
-  // Showtimes — a few in the next days
-  const showtimes = [
-    { movie_id: movieIds[0], theater_id: theaterIds[0], starts_at: addHoursISO(6), lang: 'EN', type: 'IMAX', status: 'scheduled' },
-    { movie_id: movieIds[1], theater_id: theaterIds[0], starts_at: addHoursISO(9), lang: 'ID', type: '2D', status: 'scheduled' },
-    { movie_id: movieIds[2], theater_id: theaterIds[1], starts_at: addHoursISO(24), lang: 'EN', type: '3D', status: 'scheduled' },
-    { movie_id: movieIds[0], theater_id: theaterIds[2], starts_at: addHoursISO(30), lang: 'EN', type: '2D', status: 'scheduled' },
-  ] as const;
-  for (const s of showtimes) {
+  // Showtimes — comprehensive coverage for all movies and theaters
+  // Generate multiple showtimes per movie across different theaters and times
+  const showtimeData: Array<{ movie_id: number; theater_id: number; starts_at: string; lang: string; type: string; status: string }> = [];
+
+  // Time slots (hours from now)
+  const timeSlots = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 48, 72];
+  const languages = ['ID', 'EN'];
+  const types = ['2D', '3D', 'IMAX', '4DX'];
+
+  // Create showtimes for each movie
+  for (let m = 0; m < movieIds.length; m++) {
+    const movieId = movieIds[m];
+
+    // Each movie gets showtimes at each theater
+    for (let t = 0; t < theaterIds.length; t++) {
+      const theaterId = theaterIds[t];
+
+      // Multiple time slots per movie-theater combination
+      const slotsForThis = timeSlots.slice(t * 3, t * 3 + 5); // 5 slots per theater
+
+      for (const hours of slotsForThis) {
+        showtimeData.push({
+          movie_id: movieId,
+          theater_id: theaterId,
+          starts_at: addHoursISO(hours + m * 2), // Stagger by movie index
+          lang: languages[m % languages.length],
+          type: types[(m + t) % types.length],
+          status: 'scheduled',
+        });
+      }
+    }
+  }
+
+  // Insert all showtimes
+  for (const s of showtimeData) {
     await sql`
       INSERT INTO showtimes (movie_id, theater_id, starts_at, lang, type, status)
       VALUES (${s.movie_id}, ${s.theater_id}, ${s.starts_at}, ${s.lang}, ${s.type}, ${s.status});
@@ -123,7 +150,7 @@ async function main() {
     assets: assetIds.length,
     movies: movieIds.length,
     theaters: theaterIds.length,
-    showtimes: showtimes.length,
+    showtimes: showtimeData.length,
     users: 1,
     fun: funItems.length,
   });

@@ -59,10 +59,12 @@ function CreateShowtimeForm() {
   if (!open) return <Button variant="primary" onClick={() => setOpen(true)}>Create Showtime</Button>;
 
   const submit = async () => {
+    // Convert datetime-local format to ISO string
+    const isoDate = startsAt ? new Date(startsAt).toISOString() : '';
     await create.mutateAsync({
       movieId: Number(movieId),
       theaterId: Number(theaterId),
-      startsAt,
+      startsAt: isoDate,
       lang,
       type,
     });
@@ -84,7 +86,7 @@ function CreateShowtimeForm() {
           className="h-9 w-56 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
         >
           <option value="" disabled>
-          {movies.isLoading ? "Loading..." : "Select movie"}
+            {movies.isLoading ? "Loading..." : "Select movie"}
           </option>
           {movieOptions.map((m) => (
             <option key={m.id} value={String(m.id)}>
@@ -111,8 +113,13 @@ function CreateShowtimeForm() {
         </select>
       </label>
       <label className="text-sm">
-        <span className="mb-1 block">Starts At (ISO)</span>
-        <input value={startsAt} onChange={(e) => setStartsAt(e.target.value)} placeholder="2025-03-12T19:30:00Z" className="h-9 w-56 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900" />
+        <span className="mb-1 block">Starts At</span>
+        <input
+          type="datetime-local"
+          value={startsAt}
+          onChange={(e) => setStartsAt(e.target.value)}
+          className="h-9 w-56 rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+        />
       </label>
       <label className="text-sm">
         <span className="mb-1 block">Lang</span>
