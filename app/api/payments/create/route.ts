@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 const PaymentCreateSchema = z.object({
     movieId: z.number().int().positive(),
     movieTitle: z.string().min(1),
-    showtimeId: z.number().int().positive().optional(),
+    showtimeId: z.number().int().positive().optional().nullable(),
     cinema: z.string().min(1),
-    seats: z.array(z.string()),
+    seats: z.array(z.string()).min(1, "At least one seat is required"),
     amount: z.number().int().positive(),
     customerName: z.string().min(1),
     customerEmail: z.string().email(),
@@ -28,18 +28,26 @@ export async function POST(req: Request) {
 
     try {
         const json = await req.json();
+        console.log("Payment create request:", JSON.stringify(json, null, 2));
+
         const parsed = PaymentCreateSchema.safeParse(json);
 
         if (!parsed.success) {
-            return error("Invalid request", 400, parsed.error.flatten());
+            console.log("Payment validation error:", parsed.error.flatten());
+            return error("Invalid request", 400, {
+                message: "Validation failed",
+                errors: parsed.error.flatten(),
+            });
         }
 
         const data = parsed.data;
+        console.log("Payment data validated:", data);
 
         // Generate unique order ID
         const orderId = `SANTIX-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
         // Create Snap transaction with optional enabled_payments filter
+        console.log("Creating Midtrans transaction for order:", orderId);
         const snapResponse = await createSnapTransaction({
             transaction_details: {
                 order_id: orderId,
@@ -55,18 +63,19 @@ export async function POST(req: Request) {
                     id: `MOVIE-${data.movieId}`,
                     price: Math.floor(data.amount / data.seats.length),
                     quantity: data.seats.length,
-                    name: `${data.movieTitle} - ${data.seats.join(", ")}`,
+                    name: `${data.movieTitle} - ${data.seats.join(", ")}`.substring(0, 50), // Midtrans limit
                 },
             ],
             enabled_payments: data.enabledPayments,
         });
+        console.log("Midtrans response:", snapResponse);
 
         // Save payment record to database
         const [payment] = await db
             .insert(schema.payments)
             .values({
                 orderId,
-                showtimeId: data.showtimeId,
+                showtimeId: data.showtimeId ?? null,
                 movieTitle: data.movieTitle,
                 cinema: data.cinema,
                 seats: JSON.stringify(data.seats),
@@ -77,6 +86,8 @@ export async function POST(req: Request) {
             })
             .returning();
 
+        console.log("Payment saved to DB:", payment.id);
+
         return ok({
             orderId,
             token: snapResponse.token,
@@ -86,6 +97,7 @@ export async function POST(req: Request) {
 
     } catch (err) {
         console.error("Payment creation error:", err);
-        return error("Failed to create payment", 500);
+        const message = err instanceof Error ? err.message : "Unknown error";
+        return error(`Failed to create payment: ${message}`, 500);
     }
 }
