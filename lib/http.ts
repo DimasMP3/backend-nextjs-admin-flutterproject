@@ -4,10 +4,7 @@ import type { AnyColumn, SQLWrapper } from "drizzle-orm";
 
 export type ListMeta = { page: number; pageSize: number; total: number };
 type RouteParam = { id: string };
-export type RouteParamsContext =
-  | { params: RouteParam }
-  | { params: Promise<RouteParam> }
-  | { params: RouteParam | Promise<RouteParam> };
+export type RouteParamsContext = { params: Promise<RouteParam> };
 
 export function ok<T>(data: T, init?: number | ResponseInit) {
 

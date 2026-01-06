@@ -2,7 +2,7 @@
  * Midtrans Snap Client Configuration
  * Uses Midtrans Snap API for seamless payment integration
  */
-
+import crypto from 'crypto';
 export interface MidtransConfig {
     serverKey: string;
     clientKey: string;
@@ -148,7 +148,6 @@ export function verifyWebhookSignature(
     const config = getMidtransConfig();
 
     // Create SHA512 hash of order_id + status_code + gross_amount + server_key
-    const crypto = require('crypto');
     const payload = `${orderId}${statusCode}${grossAmount}${config.serverKey}`;
     const hash = crypto.createHash('sha512').update(payload).digest('hex');
 
