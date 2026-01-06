@@ -11,6 +11,7 @@ export type GoogleProfile = {
  * Idempotently finds a user by Google identifiers or creates one if needed.
  */
 export async function ensureGoogleUser({ sub, email, name }: GoogleProfile) {
+  if (!db) throw new Error("Database not configured");
 
   let [user] = await db.select().from(schema.users).where(eq(schema.users.googleSub, sub));
 
