@@ -49,6 +49,26 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 });
 
+// Payment transactions (Midtrans integration)
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").notNull().unique(), // Midtrans order ID
+  userId: integer("user_id").references(() => users.id),
+  showtimeId: integer("showtime_id").references(() => showtimes.id),
+  movieTitle: text("movie_title"),
+  cinema: text("cinema"),
+  seats: text("seats").notNull(), // JSON string of seat codes
+  amount: integer("amount").notNull(),
+  status: text("status").default("pending").notNull(), // pending, paid, expired, failed
+  midtransTransactionId: text("midtrans_transaction_id"),
+  paymentType: text("payment_type"), // credit_card, gopay, qris, bank_transfer, etc
+  snapToken: text("snap_token"),
+  snapRedirectUrl: text("snap_redirect_url"),
+  paidAt: timestamp("paid_at", { mode: "string" }),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name"),
