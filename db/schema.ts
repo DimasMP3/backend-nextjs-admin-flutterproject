@@ -59,6 +59,8 @@ export const payments = pgTable("payments", {
   cinema: text("cinema"),
   seats: text("seats").notNull(), // JSON string of seat codes
   amount: integer("amount").notNull(),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
   status: text("status").default("pending").notNull(), // pending, paid, expired, failed
   midtransTransactionId: text("midtrans_transaction_id"),
   paymentType: text("payment_type"), // credit_card, gopay, qris, bank_transfer, etc

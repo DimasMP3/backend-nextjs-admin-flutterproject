@@ -80,6 +80,8 @@ export async function POST(req: Request) {
                 cinema: data.cinema,
                 seats: JSON.stringify(data.seats),
                 amount: data.amount,
+                customerName: data.customerName,
+                customerEmail: data.customerEmail,
                 status: "pending",
                 snapToken: snapResponse.token,
                 snapRedirectUrl: snapResponse.redirect_url,
