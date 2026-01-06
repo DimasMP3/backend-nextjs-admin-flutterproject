@@ -15,7 +15,7 @@ const PaymentCreateSchema = z.object({
     amount: z.number().int().positive(),
     customerName: z.string().min(1),
     customerEmail: z.string().email(),
-    customerPhone: z.string().optional(),
+    customerPhone: z.string().optional().nullable(),
     enabledPayments: z.array(z.string()).optional(),
 });
 
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
             customer_details: {
                 first_name: data.customerName,
                 email: data.customerEmail,
-                phone: data.customerPhone,
+                phone: data.customerPhone ?? undefined,
             },
             item_details: [
                 {
