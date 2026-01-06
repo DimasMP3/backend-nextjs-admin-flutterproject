@@ -12,13 +12,19 @@ const sql = neon(process.env.DATABASE_URL);
 
 type IdRow = { id: number };
 
-function addHoursISO(hours: number) {
-  const now = new Date();
-  return new Date(now.getTime() + hours * 3600_000).toISOString();
+// Base date: 2026-01-06
+const BASE_DATE = new Date('2026-01-06T00:00:00+07:00');
+
+function createShowtime(dayOffset: number, hour: number, minute: number = 0): string {
+  const date = new Date(BASE_DATE);
+  date.setDate(date.getDate() + dayOffset);
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
 }
 
 async function main() {
   // Clean tables in FK-safe order
+  await sql`DELETE FROM payments;`;
   await sql`DELETE FROM orders;`;
   await sql`DELETE FROM showtimes;`;
   await sql`DELETE FROM movies;`;
@@ -49,10 +55,10 @@ async function main() {
   const movies = [
     { title: 'Dune: Part Two', genre: 'Sci-Fi', duration_min: 166, rating: 'PG-13', status: 'now_showing' },
     { title: 'Inside Out 2', genre: 'Animation', duration_min: 96, rating: 'PG', status: 'now_showing' },
-    { title: 'Gladiator II', genre: 'Action', duration_min: 148, rating: 'R', status: 'coming_soon' },
+    { title: 'Gladiator II', genre: 'Action', duration_min: 148, rating: 'R', status: 'now_showing' },
     { title: 'Oppenheimer', genre: 'Drama', duration_min: 180, rating: 'R', status: 'now_showing' },
-    { title: 'Spider‑Verse', genre: 'Animation', duration_min: 140, rating: 'PG', status: 'coming_soon' },
-    { title: 'Inside Man', genre: 'Thriller', duration_min: 128, rating: 'PG-13', status: 'archived' },
+    { title: 'Spider-Verse', genre: 'Animation', duration_min: 140, rating: 'PG', status: 'now_showing' },
+    { title: 'Inside Man', genre: 'Thriller', duration_min: 128, rating: 'PG-13', status: 'now_showing' },
   ] as const;
 
   const movieIds: number[] = [];
@@ -69,9 +75,9 @@ async function main() {
 
   // Theaters
   const theaters = [
-    { name: 'Santix Central Park', location: 'Jakarta', rooms: 6, seats: 756 },
-    { name: 'Santix Galaxy Mall', location: 'Surabaya', rooms: 5, seats: 620 },
-    { name: 'Santix Margo City', location: 'Depok', rooms: 7, seats: 820 },
+    { name: 'SanTix Central Park', location: 'Jakarta', rooms: 6, seats: 756 },
+    { name: 'SanTix Galaxy Mall', location: 'Surabaya', rooms: 5, seats: 620 },
+    { name: 'SanTix Margo City', location: 'Depok', rooms: 7, seats: 820 },
   ] as const;
   const theaterIds: number[] = [];
   for (const t of theaters) {
@@ -83,16 +89,15 @@ async function main() {
     theaterIds.push(rows[0].id);
   }
 
-  // Showtimes — comprehensive coverage for all movies and theaters
-  // Generate multiple showtimes per movie across different theaters and times
+  // Showtimes — realistic schedule for the week starting 2026-01-06
   const showtimeData: Array<{ movie_id: number; theater_id: number; starts_at: string; lang: string; type: string; status: string }> = [];
 
-  // Time slots (hours from now)
-  const timeSlots = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 48, 72];
+  // Daily show times (hours)
+  const dailyTimes = [10, 13, 15, 17, 19, 21];
   const languages = ['ID', 'EN'];
   const types = ['2D', '3D', 'IMAX', '4DX'];
 
-  // Create showtimes for each movie
+  // Create showtimes for each movie across 7 days (2026-01-06 to 2026-01-12)
   for (let m = 0; m < movieIds.length; m++) {
     const movieId = movieIds[m];
 
@@ -100,18 +105,21 @@ async function main() {
     for (let t = 0; t < theaterIds.length; t++) {
       const theaterId = theaterIds[t];
 
-      // Multiple time slots per movie-theater combination
-      const slotsForThis = timeSlots.slice(t * 3, t * 3 + 5); // 5 slots per theater
+      // 7 days of showtimes
+      for (let day = 0; day < 7; day++) {
+        // Pick 3-4 time slots per day based on theater
+        const timesForDay = dailyTimes.slice(t, t + 3 + (day % 2));
 
-      for (const hours of slotsForThis) {
-        showtimeData.push({
-          movie_id: movieId,
-          theater_id: theaterId,
-          starts_at: addHoursISO(hours + m * 2), // Stagger by movie index
-          lang: languages[m % languages.length],
-          type: types[(m + t) % types.length],
-          status: 'scheduled',
-        });
+        for (const hour of timesForDay) {
+          showtimeData.push({
+            movie_id: movieId,
+            theater_id: theaterId,
+            starts_at: createShowtime(day, hour, (m * 15) % 60), // Stagger minutes by movie
+            lang: languages[m % languages.length],
+            type: types[(m + t) % types.length],
+            status: 'scheduled',
+          });
+        }
       }
     }
   }

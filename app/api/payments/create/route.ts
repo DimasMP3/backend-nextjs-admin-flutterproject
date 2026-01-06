@@ -16,6 +16,7 @@ const PaymentCreateSchema = z.object({
     customerName: z.string().min(1),
     customerEmail: z.string().email(),
     customerPhone: z.string().optional(),
+    enabledPayments: z.array(z.string()).optional(),
 });
 
 /**
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
         // Generate unique order ID
         const orderId = `SANTIX-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-        // Create Snap transaction
+        // Create Snap transaction with optional enabled_payments filter
         const snapResponse = await createSnapTransaction({
             transaction_details: {
                 order_id: orderId,
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
                     name: `${data.movieTitle} - ${data.seats.join(", ")}`,
                 },
             ],
+            enabled_payments: data.enabledPayments,
         });
 
         // Save payment record to database
